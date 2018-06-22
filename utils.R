@@ -95,7 +95,7 @@ med.normal = function (gset) {
 
 # Performs the normalization procedure described in Berry et al. 2010 and Mejias et al. 2013
 # However, median normalized genes are not saved to the new gene set.
-normalization = function(gset, med = FALSE) {
+normalization = function(gset, filter = T, med = FALSE) {
 
   # (1) All signal intensity values less than 10 were set equal to 10
   exprs(gset)[exprs(gset) < 10.0] = 10
@@ -109,7 +109,8 @@ normalization = function(gset, med = FALSE) {
   #     in greater than 10% of all samples
   
   diff.genes = (apply((exprs(med.gset) > 2.00) , 1, mean) > 0.10) | (apply((exprs(med.gset) < 0.50) , 1, mean) > 0.10)
-  gset = gset[diff.genes,]
+  if (filter)
+    gset = gset[diff.genes,]
   
   print(paste(dim(exprs(gset))[1], "genes passed the 2 fold change from median in 10% of samples filter"))
   
@@ -212,5 +213,109 @@ process.data = function(expres, PAL) {
   
   return(expres)
 }
+
+filter.human.pheno = function(data) {
+    cols = c("age:ch1",
+             "code:ch1",
+             "gender:ch1",
+             "group:ch1",
+             "site:ch1",
+             "subjectid:ch1",
+             "time.from.exposure.months:ch1",
+             "time.to.tb.months:ch1")
+    
+    
+    new.names = c("age",
+                 "code",
+                 "gender",
+                 "group",
+                 "site",
+                 "subjectid",
+                 "time.from.exposure.months",
+                 "time.to.tb.months")
+    factors = c("code","gender",
+                 "group",
+                 "site",
+                 "subjectid")
+    
+    # Depending on the analysis, I may want time.from.exposure.months to be a factor, but for now is a numeric
+    numbers = c("age",
+                 "time.from.exposure.months",
+                 "time.to.tb.months")
+    
+
+    
+    new.data = data[,cols]
+    colnames(new.data) = new.names
+    for (col in factors)
+        new.data[,col] = as.factor(new.data[,col])
+    for (col in numbers)
+        new.data[,col] = as.numeric(new.data[,col])
+    
+ 
+    # Filter out subjects with NA on clinical data. There are 6 of them.
+    new.data = new.data[new.data$gender != "NA",]
+    new.data = droplevels(new.data)
+    
+
+    # Filter out the duplicated GEO Access Numbers (8 samples, have same code and patient id and clinical info)
+    # I have emailed Gerhard Werlzl and Daniel Zak, the corresponding authors, asking about this
+    
+    dup.codes = sort(as.numeric(names(table(new.data$code)[table(new.data$code) == 2])))
+    dup.pheno = new.data[new.data$code %in% dup.codes, ]
+    dup.pheno <- dup.pheno[order(dup.pheno$code),] 
+    print(rownames(dup.pheno))
+    print(dup.pheno$code)
+
+    gsm.to.remove = rownames(dup.pheno)[seq(1, length(dup.pheno$code), by=2)]
+    
+    new.data = new.data[!(rownames(new.data) %in% gsm.to.remove),]
+    
+    new.data = new.data[order(as.numeric(as.character(new.data$code))),]
+    
+    
+    return(new.data)
+}
+
+filter.human.exprs = function(exprs, pheno) {
+    exprs.cols = colnames(exprs)[2:dim(exprs)[2]]
+    exprs.cols = gsub("X", "", exprs.cols)
+   
+    
+    # Some of the double genes are not labeled correctly. For example, ENSG00000124191 is TOX2, not KLRD1. Also ENSG00000260539 no longer maps to a gene. I am going to go ahead and stick with the ENSEMBL identifier. I'll go back to the genes on the interesting genes, etc.
+    
+    # I will just remove the gene symbol for now.
+    exprs = exprs[,-1]
+    colnames(exprs) = exprs.cols
+    
+    # I also need to remove codes not in the pheno data, those 6 samples that didn't have clinical data.
+    exprs = exprs[,exprs.cols %in% pheno$code]
+    
+    # Sort columns by code
+    exprs = exprs[, order(as.numeric(as.character(colnames(exprs))))]
+    
+    
+     print("Are all the codes in the expression data in the same order as the codes in pheno?")
+    print(identical(as.character(colnames(exprs)), as.character(pheno$code)))
+    #print(data.frame(exprs=colnames(exprs)[1:50], pheno=pheno$code[1:50]))
+    # Remove gene symbol
+    return(exprs)
+}
+detach_package <- function(pkg, character.only = FALSE)
+{
+  if(!character.only)
+  {
+    pkg <- deparse(substitute(pkg))
+  }
+  search_item <- paste("package", pkg, sep = ":")
+  while(search_item %in% search())
+  {
+    detach(search_item, unload = TRUE, character.only = TRUE)
+  }
+}
+
+easy.print = function(data) {
+    cat(sapply(colnames(data), function(x) {paste("\"", x, "\",\n", sep="")}))
+   }
 
 # --------------------------------------------------------------------------------------------------
