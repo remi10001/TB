@@ -214,6 +214,21 @@ process.data = function(expres, PAL) {
   return(expres)
 }
 
+make.train.test = function(data, pheno) {
+    for (p in 1:dim(data)[1]) {
+        for (d in 2:dim(data)[2])
+            if (data[p,d] %in% c("Training", "Test")) {
+                idx = which(pheno$subjectid == as.character(data[p, 1]))
+                if (length(idx) == 0) {
+                    print(as.character(data[p,1]))
+                    print(data[p,d])
+                    }
+                pheno$dataset[idx] = as.character(data[p,d])
+        }
+}
+    return(pheno)
+}
+
 filter.human.pheno = function(data) {
     cols = c("age:ch1",
              "code:ch1",
@@ -254,11 +269,37 @@ filter.human.pheno = function(data) {
     
  
     # Filter out subjects with NA on clinical data. There are 6 of them.
-    new.data = new.data[new.data$gender != "NA",]
-    new.data = droplevels(new.data)
+    # Actually, we need to add them back in! It's a typo.
+    
+    # I need to email them again about all the samples that are missing... Just go off expression codes.
+    # Also tell them that they have errors in their uploaded pheno table matrix file.
+    # I should just check the totals too.
     
 
-    # Filter out the duplicated GEO Access Numbers (8 samples, have same code and patient id and clinical info)
+    
+    addit.row.names = c("GSM2475704", "GSM2475705", "GSM2475706", "GSM2475722", "GSM2475742", "GSM2475748")
+    add.age = c(32, 34, 28, 40, 24, 18)
+    add.code = c(672, 694, 695, 994, 1061, 1194)
+    add.gender = c("F", "F", "F", "F", "F", "F")
+    add.group = c("case (TB)", "Control", "Control", "Control", "Control", "Control")
+    add.site = c("UGA", "UGA", "UGA", "AHRI", "AHRI", "AHRI")
+    add.subjectid = c("92245", "91420103",  "91451104", "KHHC87", "DZHHC06", "KAZHHC23")
+    add.time.from.exposure.months = c(0, 0, 0, 18, 6, 18)
+    add.time.to.tb.months = c(6, NA, NA, NA, NA, NA)
+    
+    add.data = data.frame(age = add.age, code = as.factor(add.code), gender = as.factor(add.gender),
+                          group = as.factor(add.group), site = as.factor(add.site), subjectid = as.factor(add.subjectid),
+                          time.from.exposure.months = add.time.from.exposure.months,
+                          time.to.tb.months = add.time.to.tb.months)
+    rownames(add.data) = addit.row.names
+    
+    print(new.data[new.data$gender == "NA",])
+    new.data = new.data[new.data$gender != "NA",]
+    new.data = droplevels(new.data)
+    new.data = rbind(new.data, add.data)
+    
+
+    # Filter out the duplicated GEO Access Numbers (16 samples, have same code and patient id and clinical info)
     # I have emailed Gerhard Werlzl and Daniel Zak, the corresponding authors, asking about this
     
     dup.codes = sort(as.numeric(names(table(new.data$code)[table(new.data$code) == 2])))
@@ -273,19 +314,51 @@ filter.human.pheno = function(data) {
     
     new.data = new.data[order(as.numeric(as.character(new.data$code))),]
     
+    # Add training and test split from Suliman et al
     
+    control_data = read.csv("data/Suliman_et_al_Human_Data//Additional_data_table_trainingtest_controls.csv", header=F)
+    prog_data  = read.csv("data/Suliman_et_al_Human_Data//Additional_data_table_trainingtest_progressors.csv", header=F)
+
+    # Match subjectids to how they are in pheno table
+    control_data$V1 =gsub("20([0178923]*)/", "\\1/", control_data$V1)
+    prog_data$V1 =gsub("20([0178923]*)/", "\\1/", prog_data$V1)
+    
+    new.data$dataset = NA
+    
+    new.data = make.train.test(control_data, new.data)
+    new.data = make.train.test(prog_data, new.data)
+
+    # Make those not assigned a set in Suliman et al Training. These are only 2-3 subjects
+    print("Subjects not assigned a training-test set that are now training")
+    print(table(droplevels(new.data$subjectid[is.na(new.data$dataset)])))
+    new.data$dataset[is.na(new.data$dataset)] = "Training"
+    
+    # the one AHRI should be training
+    new.data$dataset[new.data$site == "AHRI"] = "Test"
+    
+    new.data$dataset = as.factor(new.data$dataset)
+    
+    # Go ahead and remove the few UGandan samples:
+    new.data = droplevels(new.data[new.data$site != "UGA",])
+    
+    #new.data$tb.status = as.factor(ifelse(is.na(new.data$time.to.tb.months), "control", "prog"))
+    
+    print("about to return new data frame")
     return(new.data)
 }
 
-filter.human.exprs = function(exprs, pheno) {
-    exprs.cols = colnames(exprs)[2:dim(exprs)[2]]
+filter.human.exprs = function(exprs, pheno, splice=F) {
+    sample.start = 2
+    if (splice)
+        sample.start = 7
+    exprs.cols = colnames(exprs)[sample.start:dim(exprs)[2]]
     exprs.cols = gsub("X", "", exprs.cols)
    
     
     # Some of the double genes are not labeled correctly. For example, ENSG00000124191 is TOX2, not KLRD1. Also ENSG00000260539 no longer maps to a gene. I am going to go ahead and stick with the ENSEMBL identifier. I'll go back to the genes on the interesting genes, etc.
     
     # I will just remove the gene symbol for now.
-    exprs = exprs[,-1]
+    exprs = exprs[,-c(1:(sample.start-1))]
     colnames(exprs) = exprs.cols
     
     # I also need to remove codes not in the pheno data, those 6 samples that didn't have clinical data.
@@ -301,6 +374,15 @@ filter.human.exprs = function(exprs, pheno) {
     # Remove gene symbol
     return(exprs)
 }
+
+graph_PCA = function(PCA, n_dim, var, pheno) {
+    gg.PCA = as.data.frame(PCA$x[,1:n_dim])
+    gg.PCA$time.period = pheno[,var]
+    gg.PCA$time.period = as.character(gg.PCA$time.period)
+    options(repr.plot.width=8, repr.plot.height=5)
+    print(ggpairs(gg.PCA, aes(colour = time.period)))
+}
+
 detach_package <- function(pkg, character.only = FALSE)
 {
   if(!character.only)
