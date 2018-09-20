@@ -402,6 +402,7 @@ detach_package <- function(pkg, character.only = FALSE)
 easy.print = function(data) {
     cat(sapply(colnames(data), function(x) {paste("\"", x, "\",\n", sep="")}))
    }
+easy.v.print = function(x) {cat(sapply(x, function(x) {paste("\"", x, "\",\n", sep="")}))}
 
 calculate.distribution = function(data) {
     data.tadd = data
@@ -533,5 +534,124 @@ all.metrics = function(truth, pred) {
     print("R squared")
     print(caret::R2(pred, truth))
 }
+
+library(verification)
+
+roc.pvalue = function(obs, prob.pred, pos) {
+    return(roc.area(ifelse(as.factor(obs)==pos, 1, 0), prob.pred)$p.value)
+}
+
+my.roc = function(pred.prob, obs, pos, title="ROC Curve") {
+    
+    levs = levels(as.factor(obs))
+    if (length(levs) != 2) {
+        print("roc requires only two classes!")
+        return(-1)
+    }
+    
+    if (levs[2] != pos)
+        levs = rev(levs)
+    
+    the.roc = roc(predictor=pred.prob,
+              response = as.factor(obs),
+              levels=levs)
+    print("This is the AUC:")
+    print(the.roc$auc)
+    
+    print("This is the AUC p-value:")
+    print(roc.pvalue(obs, pred.prob, pos ))
+    print("This is the AUC 95% Confidence Interval")
+    print(ci(the.roc))
+    plot.roc(the.roc, main=title, legacy.axes=T)
+    return(the.roc)
+}
+
+my.roc.auc = function(pred.prob, obs, pos, title="ROC Curve") {
+    
+    levs = levels(as.factor(obs))
+    if (length(levs) != 2) {
+        print("roc requires only two classes!")
+        return(-1)
+    }
+    
+    if (levs[2] != pos)
+        levs = rev(levs)
+    
+    the.roc = roc(predictor=pred.prob,
+              response = as.factor(obs),
+              levels=levs)
+
+    return(the.roc$auc)
+}
+
+library(akima)
+graph.hyper = function(x, y, z) {
+   interpdf <-interp2xyz(interp(x=x, y=y, z=z, duplicate="mean"), data.frame=TRUE)
+
+interpdf %>%
+  filter(!is.na(z)) %>%
+  tbl_df() %>%
+  ggplot(aes(x = x, y = y, z = z, fill = z)) + 
+  geom_tile() + 
+  geom_contour(color = "white", alpha = 0.05) + 
+  scale_fill_distiller(palette="Spectral", na.value="white") + 
+  theme_bw() 
+}
+
+filter.ACS.pheno = function(data) {
+    cols = c("title",
+             "age:ch1",
+             "bin:ch1",
+             "gender:ch1",
+             "ethnicity:ch1",
+             "previous diagnosis of tb:ch1",
+             "group:ch1",
+             "qft:ch1",
+             "tst:ch1")
+    
+    
+    new.names  = c("title",
+                 "age",
+             "bin",
+             "gender",
+             "ethnicity",
+             "previous.diagnosis.of.tb",
+             "group",
+             "qft",
+             "tst")
+    factors = c("title",
+             "bin",
+             "gender",
+             "ethnicity",
+             "previous.diagnosis.of.tb",
+             "group",
+             "qft")
+    
+    # Depending on the analysis, I may want time.from.exposure.months to be a factor, but for now is a numeric
+    numbers = c("age",
+                 "tst")
+    
+    
+    new.data = data[,cols]
+    colnames(new.data) = new.names
+    for (col in factors)
+        new.data[,col] = as.factor(new.data[,col])
+    for (col in numbers)
+        new.data[,col] = as.numeric(new.data[,col])
+    
+    print("about to return new data frame")
+    return(new.data)
+}
+
+filter.HUMAN.exprs = function(exprs, pheno) {
+    exprs = exprs[, colnames(exprs) %in% row.names(pheno)]
+    exprs = exprs[, match(row.names(pheno), colnames(exprs) )]
+    
+    print("Identical column and rownames between exprs and pheno tables?")
+    print(identical(colnames(exprs), row.names(pheno)))
+    return(exprs)
+}   
+
+
 
 # --------------------------------------------------------------------------------------------------
