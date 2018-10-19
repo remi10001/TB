@@ -399,8 +399,10 @@ detach_package <- function(pkg, character.only = FALSE)
   }
 }
 
-easy.print = function(data) {
-    cat(sapply(colnames(data), function(x) {paste("\"", x, "\",\n", sep="")}))
+easy.print = function(data, qte=T) {
+    sepr = ifelse(qte, "\"", "") 
+    
+    cat(sapply(colnames(data), function(x) {paste(sepr, x, sepr ,",\n", sep="")}))
    }
 easy.v.print = function(x) {cat(sapply(x, function(x) {paste("\"", x, "\",\n", sep="")}))}
 
