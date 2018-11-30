@@ -543,6 +543,68 @@ roc.pvalue = function(obs, prob.pred, pos) {
     return(roc.area(ifelse(as.factor(obs)==pos, 1, 0), prob.pred)$p.value)
 }
 
+debug.my.roc = function(pred.prob, obs, pos, title="ROC Curve") {
+    print("WHAT FOLLOWS HEREAFTER IS THE CORRECT ORDER OF FACTORS")
+    levs = levels(as.factor(obs))
+    print("Levels before reversing")
+    print(levs)
+    if (length(levs) != 2) {
+        print("roc requires only two classes!")
+        return(-1)
+    }
+    
+    if (levs[2] != pos)
+        levs = rev(levs)
+    
+    print("Levels after reversing")
+    print(levs)
+    
+    the.roc = roc(predictor=pred.prob,
+              response = as.factor(obs),
+              levels=levs)
+    print("This is the AUC:")
+    print(the.roc$auc)
+    
+    print("This is the AUC p-value:")
+    print(roc.pvalue(obs, pred.prob, pos ))
+    print("This is the AUC 95% Confidence Interval")
+    print(ci(the.roc))
+    plot.roc(the.roc, main=title, legacy.axes=T)
+    
+    print("WHAT FOLLOWS HEREAFTER IS THE OPPOSITE, INCORRECT ORDER OF FACTORS")
+    pos = levs[which(levs != pos)]
+    levs = levels(as.factor(obs))
+    print("Levels before reversing")
+    print(levs)
+    if (length(levs) != 2) {
+        print("roc requires only two classes!")
+        return(-1)
+    }
+    
+    # Here is the changed line for debug
+    if (levs[2] != pos)
+        levs = rev(levs)
+    print("Levels after reversing")
+    print(levs)
+    
+    the.roc.wrong = roc(predictor=pred.prob,
+              response = as.factor(obs),
+              levels=levs)
+    print("This is the AUC:")
+    print(the.roc.wrong$auc)
+    
+    print("This is the AUC p-value:")
+    print(roc.pvalue(obs, pred.prob, pos ))
+    print("This is the AUC 95% Confidence Interval")
+    print(ci(the.roc.wrong))
+    plot.roc(the.roc.wrong, main=title, legacy.axes=T)
+    
+    return(the.roc) # this is the correct roc
+}
+
+    
+    
+# pred.prob is the probability of the pos class
 my.roc = function(pred.prob, obs, pos, title="ROC Curve") {
     
     levs = levels(as.factor(obs))
