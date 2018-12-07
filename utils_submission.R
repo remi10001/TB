@@ -1,5 +1,99 @@
 # This file contains helpful functions for my R code
 
+# Function Definitions for paper analysis reproduction
+
+process.monkey.vars = function(pheno, covars, num.vars, fac.vars) {
+  
+  # Select only variables we are interested in
+  pheno = pheno[,covars]
+  
+  # Remove field names from data and convert categorical variables to factors, numeric to numeric
+  for (var in union(num.vars, fac.vars)) {
+    old.data = as.character(pheno[,var])
+    new.name = strsplit(old.data[1], split=":")[[1]][1]
+    new.data = as.character(sapply(old.data, function(x) {return(trimws(strsplit(x, split=":")[[1]][2]))}))
+    if (var %in% num.vars)
+      new.data = as.numeric(new.data)
+    else
+      new.data = as.factor(new.data)
+    
+    colnames(pheno)[colnames(pheno) == var] = new.name
+    pheno[,new.name] = new.data
+  }
+  
+  # Replace spaces with periods in variable names to facilitate R subsetting
+  colnames(pheno) = gsub(" ", ".", colnames(pheno), fixed=T)
+  
+  # The clinical status of monkey 18 at time point 0 is incorrectly labeled as latent. Should be active. This is an error in the data submission to GEO.
+  pheno$clinical.status[pheno$monkeyid == "M18" & pheno$time.point==0] = "Active"
+  
+  # Create an extra numeric variable to combine the baseline into one time point
+  pheno$time.point.comb = ifelse(pheno$time.point==1, 0, pheno$time.point)
+  
+  return(pheno)
+}
+
+filter.monkey.pheno = function(pheno) {
+    covars = c("title",
+  "characteristics_ch1.1",
+  "characteristics_ch1.2",
+   "characteristics_ch1.3",
+  "characteristics_ch1.4",
+  "characteristics_ch1.6",
+  "characteristics_ch1.7",
+  "characteristics_ch1.8",
+  "characteristics_ch1.9",
+  "description",
+  "description.1")
+
+  num.vars = c("characteristics_ch1.7")
+
+  fac.vars = c(
+  "characteristics_ch1.1",
+  "characteristics_ch1.2",
+   "characteristics_ch1.3",
+  "characteristics_ch1.4",
+  "characteristics_ch1.6",
+  "characteristics_ch1.8",
+  "characteristics_ch1.9")
+
+  pheno.f = process.monkey.vars(pheno, covars, num.vars, fac.vars)
+  print(pheno.f)
+    return(pheno.f)
+}
+
+get.monkey.expressed.genes = function(raw.expres) {
+    det_pval_thresh = 0.01
+
+  # 13 Time points
+  # 100/13 = 7.69 %
+  # Choose 5% to get equivalent of significant part of one time point
+  percent_samples= 0.05
+  Detection_Pval = raw.expres[,grepl("Detection", colnames(raw.expres))]
+  
+  PAL.5 = raw.expres$ID_REF[apply(Detection_Pval <= det_pval_thresh, 1, mean) >= percent_samples]
+  
+  print(paste("Genes expressed in at least", percent_samples*100, "% of samples:", length(PAL.5)))
+    
+  return(PAL.5)
+}
+
+process.monkey.exprs = function(expres, PAL) {
+  
+  expres = expres[PAL,]
+  # All signal intensity values less than 10 are set equal to 10
+  expres[expres < 10.0] = 10
+  
+  # Log 2 transform the data
+  expres = log2(expres)
+  
+  
+  return(expres)
+}
+
+
+
+
 library(lubridate)
 
 
@@ -649,11 +743,12 @@ my.roc.auc = function(pred.prob, obs, pos, title="ROC Curve") {
 }
 
 library(akima)
+
 graph.hyper = function(x, y, z) {
    interpdf <-interp2xyz(interp(x=x, y=y, z=z, duplicate="mean"), data.frame=TRUE)
 
 interpdf %>%
-  filter(!is.na(z)) %>%
+  dplyr::filter(!is.na(z)) %>%
   tbl_df() %>%
   ggplot(aes(x = x, y = y, z = z, fill = z)) + 
   geom_tile() + 
