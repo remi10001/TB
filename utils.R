@@ -52,7 +52,7 @@ make.expression.set = function(array_data, pheno, conv) {
   array.Pal.10 = array.Pal.10[,  !grepl("Detection", colnames(array.Pal.10))]
   
   # Changes name of microarray samples from barcode to the sample name in the phenotype data.
-  colnames(array.Pal.10) = convert.barcode(array.Pal.10, mousechip_conv)
+  colnames(array.Pal.10) = convert.barcode(array.Pal.10, conv)
   expres = array.Pal.10
   rownames(expres) = expres$PROBE_ID
   expres = expres[,grepl("OSU", colnames(expres))]
@@ -60,7 +60,7 @@ make.expression.set = function(array_data, pheno, conv) {
   expres= expres[,reorder]
   # Grabs only the microarray signal data from the array data frame
   # gene_data = array.Pal.10[,grepl("OSU", colnames(array.Pal.10))]
-  pdat = pheno_data[,c("Race", "Condition..Tx.Group", "Time.Point", "chip.name")]
+  pdat = pheno[,c("Race", "Condition..Tx.Group", "Time.Point", "chip.name")]
     
   rownames(pdat) = pdat$chip.name
   
@@ -653,7 +653,7 @@ graph.hyper = function(x, y, z) {
    interpdf <-interp2xyz(interp(x=x, y=y, z=z, duplicate="mean"), data.frame=TRUE)
 
 interpdf %>%
-  filter(!is.na(z)) %>%
+  dplyr::filter(!is.na(z)) %>%
   tbl_df() %>%
   ggplot(aes(x = x, y = y, z = z, fill = z)) + 
   geom_tile() + 

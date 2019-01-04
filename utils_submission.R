@@ -146,7 +146,7 @@ make.expression.set = function(array_data, pheno, conv) {
   array.Pal.10 = array.Pal.10[,  !grepl("Detection", colnames(array.Pal.10))]
   
   # Changes name of microarray samples from barcode to the sample name in the phenotype data.
-  colnames(array.Pal.10) = convert.barcode(array.Pal.10, mousechip_conv)
+  colnames(array.Pal.10) = convert.barcode(array.Pal.10, conv)
   expres = array.Pal.10
   rownames(expres) = expres$PROBE_ID
   expres = expres[,grepl("OSU", colnames(expres))]
@@ -154,7 +154,7 @@ make.expression.set = function(array_data, pheno, conv) {
   expres= expres[,reorder]
   # Grabs only the microarray signal data from the array data frame
   # gene_data = array.Pal.10[,grepl("OSU", colnames(array.Pal.10))]
-  pdat = pheno_data[,c("Race", "Condition..Tx.Group", "Time.Point", "chip.name")]
+  pdat = pheno[,c("Race", "Condition..Tx.Group", "Time.Point", "chip.name")]
     
   rownames(pdat) = pdat$chip.name
   
@@ -833,6 +833,79 @@ generate.regres.graph = function(data, label, log = F, break.90 = F) {
         theme(plot.title = element_text(hjust = 0.5))
     
     return(q)
+}
+
+get.GEO.eset = function(old_array, c_array, pheno, conv) {
+    # Several Steps
+    # (1) Separate signal and p-value, then remove from all arrays not in the pheno (i.e. not C57BL/6, since only B6 is being published)
+    # (2) Order all arrays by their order in the pheno (reorder, then convert to new name)
+    # (3) Reorder the rows according to the order in the old array.
+    # (4) Put together the ID_REF, signal and p-value pieces.
+    
+    
+    # (1) Separate signal and p-value, then remove from all arrays not in the pheno (i.e. not C57BL/6, since only B6 is being published)
+    ID_REF = as.character(c_array$ID_REF)
+    p_val = c_array[,grepl("Detection", colnames(c_array))]
+    expres = c_array[,!grepl("Detection", colnames(c_array))]
+    expres = expres[,2:dim(expres)[2]] # remove ID_REF
+    colnames(expres) = convert.barcode(expres, conv)
+    select_samples = colnames(expres) %in% rownames(pheno)
+    p_val = p_val[,select_samples]
+    expres = expres[,select_samples]
+    
+    
+    # (2) Order all arrays by their order in the pheno (reorder, then convert to new name)
+    reorder = match(rownames(pheno), colnames(expres))
+    p_val = p_val[,reorder]
+    expres = expres[,reorder] 
+    print('Are pheno rows the same as expression columns?')
+    print(identical(rownames(pheno), colnames(expres)))
+    
+    colnames(expres) = pheno$Mouse.ID
+    
+    # (3) Reorder the rows according to the order in the old array.
+    old_ID_REF = as.character(old_array$PROBE_ID)
+    row_reorder = match(old_ID_REF, ID_REF)
+    ID_REF = ID_REF[row_reorder]
+    p_val = p_val[row_reorder,]
+    expres = expres[row_reorder,]
+    
+    # (4) Put together the ID_REF, signal and p-value pieces.
+    new_array = data.frame(ID_REF = ID_REF)
+    name_c = 2
+    for (i in 1:dim(expres)[2]) {
+        new_array = cbind(new_array, expres[,i])
+        colnames(new_array)[name_c] = colnames(expres)[i]
+        name_c = name_c + 1
+        new_array = cbind(new_array, p_val[,i])
+        colnames(new_array)[name_c]= "Detection Pval"
+        name_c = name_c + 1
+    }
+    
+    return(new_array)
+    
+}
+
+get.GEO.pheno = function(pheno, conv) {
+    pdat = pheno[,c("Mouse.ID", "Race", "Condition..Tx.Group", "Time.Point", "Tissue.Type", "chip.name")]
+
+    rownames(pdat) = pdat$chip.name
+
+    # trimws(
+    pdat$Time.Point = as.numeric(  unlist(lapply(strsplit(as.character(pdat$Time.Point), split=" "), function(x) {return(x[[2]])})))
+    pdat = pdat[, !(colnames(pdat) == "chip.name")]
+    colnames(pdat) = c("Mouse.ID", "Strain", "Infect.Status", "Time.point.days", "Tissue")
+    pdat$Infect.Status = as.character(pdat$Infect.Status)
+    #print(pdat$Infect.Status)
+    pdat$Infect.Status[pdat$Infect.Status != "Mtb"] = "Naive"
+    #print(pdat$Infect.Status)
+    pdat$Infect.Status = as.factor(pdat$Infect.Status)
+    pdat$Gender = "female"
+
+
+    pdat = pdat[pdat$Strain == "C57BL/6",]
+    pdat$Mouse.ID = paste(pdat$Infect.Status, pdat$Time.point.days, pdat$Mouse.ID, sep="_")
+    return(pdat)
 }
 
 # --------------------------------------------------------------------------------------------------
