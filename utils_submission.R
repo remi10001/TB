@@ -835,7 +835,7 @@ generate.regres.graph = function(data, label, log = F, break.90 = F) {
     return(q)
 }
 
-get.GEO.eset = function(old_array, c_array, pheno, conv) {
+get.GEO.eset = function(old_array, c_array, pheno, conv, raw=F) {
     # Several Steps
     # (1) Separate signal and p-value, then remove from all arrays not in the pheno (i.e. not C57BL/6, since only B6 is being published)
     # (2) Order all arrays by their order in the pheno (reorder, then convert to new name)
@@ -846,8 +846,16 @@ get.GEO.eset = function(old_array, c_array, pheno, conv) {
     # (1) Separate signal and p-value, then remove from all arrays not in the pheno (i.e. not C57BL/6, since only B6 is being published)
     ID_REF = as.character(c_array$ID_REF)
     p_val = c_array[,grepl("Detection", colnames(c_array))]
-    expres = c_array[,!grepl("Detection", colnames(c_array))]
-    expres = expres[,2:dim(expres)[2]] # remove ID_REF
+    if (raw) p_val = 1 - p_val
+    if (!raw) {
+         expres = c_array[,!grepl("Detection", colnames(c_array))]
+           expres = expres[,2:dim(expres)[2]] # remove ID_REF
+        } else {
+        expres = c_array[,grepl("AVG_Signal", colnames(c_array))]
+        colnames(expres) = gsub("AVG_Signal.", "", colnames(expres), fixed=T)
+        
+        }
+   
     colnames(expres) = convert.barcode(expres, conv)
     select_samples = colnames(expres) %in% rownames(pheno)
     p_val = p_val[,select_samples]
