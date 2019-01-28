@@ -25,13 +25,20 @@
 #wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE79nnn/GSE79362/matrix/GSE79362_series_matrix.txt.gz
 
 # cd ../..
-mkdir data/GSE116014
-cd data/GSE116014
+#mkdir data/GSE116014
+#cd data/GSE116014
 
-wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE116nnn/GSE116014/matrix/GSE116014_series_matrix.txt.gz
+#wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE116nnn/GSE116014/matrix/GSE116014_series_matrix.txt.gz
 
-wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE116nnn/GSE116014/suppl/GSE116014_RAW.tar
+#wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE116nnn/GSE116014/suppl/GSE116014_RAW.tar
 
-tar xf GSE116014_RAW.tar
-gzip -d *idat.gz
+#tar xf GSE116014_RAW.tar
+#gzip -d *idat.gz
+
+# cd ../..
+#mkdir data/GSE107995
+cd data/GSE107995
+
+wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE107nnn/GSE107995/matrix/GSE107995_series_matrix.txt.gz
+
 

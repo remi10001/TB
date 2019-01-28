@@ -508,15 +508,8 @@ calculate.distribution = function(data) {
 
 }
 
-get.contact.data = function(pheno=F) {
-    contact.nonprogress.eset = getGEO(filename="data/Singhanaia_et_al_human//GSE107993_series_matrix.txt.gz",
-                                 destdir="data/Singhanaia_et_al_human/")
-
-    contact.progress.eset = getGEO(filename="data/Singhanaia_et_al_human/GSE107994_series_matrix.txt.gz",
-                              destdir="data/Singhanaia_et_al_human/")
-    print("Are column names identical between non-progressor and progressor datasets?")
-    print(identical(colnames(pData(contact.nonprogress.eset)), colnames(pData(contact.progress.eset))))
-    contact.pheno = rbind(pData(contact.nonprogress.eset), pData(contact.progress.eset))
+filter.Garra.pheno = function(contact.pheno) {
+   
     colnames(contact.pheno) = gsub(" ",".", gsub(":ch1|\\(|\\)","",colnames(contact.pheno)))
     
     contact.pheno = contact.pheno[,c("title", "source_name_ch1",
@@ -554,15 +547,7 @@ num.f = c  ("age_at_baseline_visit",
 for (f in num.f) {
     contact.pheno[,f] = as.numeric(contact.pheno[,f])
 }
-    # Make the pheno and exprs identifiers compatible
-    title = as.character(contact.pheno$title)
-    contact.pheno$title = NULL
-    row.names(contact.pheno) = title
     
-    
-    # Filter out the people not in the longitudinal cohort, including the controls and LTBI+. Maybe I could use them in the future, just to see if baseline is correct, but I don't think they are useful right now
-    
-    contact.pheno = droplevels(contact.pheno[!(contact.pheno$source_name_ch1 %in% c("Leicester_Active_TB", "Leicester_Control", "Leicester_LTBI")),])
     
     # Add in a time since exposure variable, which is time since baseline until Anne O'Garra provides me with further information.
     time.since.exposure.days = rep(0, dim(contact.pheno)[1])
@@ -575,33 +560,9 @@ for (f in num.f) {
     }
     contact.pheno$time.since.exposure.days = as.numeric(time.since.exposure.days)
     
-    if(pheno) {
-        print(summary(contact.pheno))
-        return(contact.pheno)
-        }
-    
-    
-    contact.progres.exprs = read.csv("data/Singhanaia_et_al_human/GSE107994_Raw_counts_Leicester_with_progressor_longitudinal.csv", header=T, row.names=1)
-
-contact.nonprogres.exprs = read.csv("data/Singhanaia_et_al_human/GSE107993_Raw_counts_Leicester_non_progressor_longitudnal_only.csv", header=T, row.names=1)
-
-contact.exprs = cbind(contact.progres.exprs, contact.nonprogres.exprs)
-
-    
-    # Remove gene name and gene biotype as well as samples/subjects that were filtered out of contact.pheno
-    contact.exprs = contact.exprs[, colnames(contact.exprs) %in% row.names(contact.pheno)]
-    
-    print("Dimensions of expression and pheno matrices:")
-    print(dim(contact.exprs))
-    print(dim(contact.pheno))
-    
-    # Make the order of samples same in pheno table and exprs table
-    contact.exprs = contact.exprs[,match(row.names(contact.pheno), colnames(contact.exprs) )]
-    
-   
-    return(contact.exprs)
-    
-    
+    print(summary(contact.pheno))
+    return(contact.pheno)
+          
 }
 
 rmse <- function(truth, pred) 
