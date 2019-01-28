@@ -1,4 +1,4 @@
-# This script is copied from the R MetaIntegrator package "immunoStates.R" script. It is thus under a LGPL license.
+# This script is copied from the R MetaIntegrator package "immunoStates.R" script. It is thus under a LGPL license. To review the LGPL license, see License_immunoStates_metaintegrator.txt
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #iSdeconvolution
