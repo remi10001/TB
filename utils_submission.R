@@ -1,6 +1,6 @@
 # This file contains helpful functions for my R code
 
-# Function Definitions for paper analysis reproduction
+# Function Definitions for paper analysis reproduction:
 
 process.monkey.vars = function(pheno, covars, num.vars, fac.vars) {
   
@@ -92,114 +92,8 @@ process.monkey.exprs = function(expres, PAL) {
 }
 
 
-
-
 library(lubridate)
 
-
-save.progress = function(file="Monkey-TimesinceTB-caret-bulmer", dir="/master/rault/TB/data") {
-    save.image(file=paste(dir, 
-                      paste(file, Sys.Date(), ".RData", sep="-"),
-                      sep="/"))
-    }
-
-
-# --------------------------------------------------------------------------------------------------
-
-# Function Definitions for Time Since Infection analysis (the first set of functions is for the mouse data)
-
-
-
-
-# I want to reproduce what I created
-graph.PCA = function(PCA, strat, pheno) {
-  # pheno and PCA may have different samples. I want to remove items from pheno
-  # It may be the case that I have errors with retained factors, could deal with these by converting pheno
-  # to all character at beginning if I have to. That would be the easiest fix if I have this problem
-  # print(paste("Old dimensions of pheno table:", dim(pheno)))
-  # retain = overlap(rownames(PCA), pheno$chip.name)
-  # pheno = pheno[retain,]
-  # print(paste("New dimensions of pheno table:", dim(pheno)))
-  
-  # How many colors will I need
-  cols = rainbow(length(table(pheno[,strat])))
-  # plot.col = rep("blue", length(rownames(PCA)))
-  # I need to assign the different variables in pheno stat
-  strat.names = names(table(pheno[,strat]))
-  # can just use which on the names to get the index of the color
-  plot.col = rep("blue", length(rownames(PCA)))
-  
-  # I need to go through this plot.col with each sample, find the samples category and change color if necessary
-  i = 1
-  for (sample in rownames(PCA)) {
-    plot.col[i] = cols[strat.names == pheno[rownames(pheno) == sample,strat]]
-    i = i + 1
-  }
-  for (col in plot.col)
-    print(col)
-  
-  # should modify the code to choose PCA axes
-  x <- PCA[,4]
-  y <- PCA[,5]
-  z <- PCA[,6]
-  plot3d(x, y, z, col=plot.col, type='p', size=10.0, lwd=1,
-         xlab="PC4", ylab="PC5", zlab="PC6",
-         
-         
-         main="Principle Component Analysis of Mouse Microarray Data")
-  legend3d("topright", legend = strat.names, pch = 16, col = cols, cex=1, inset=c(0.02))
-  
-  # print("Here are the plot colors", plot.col)
-  # we have the new pheno, it is all in order
-  
-}
-
-# Here are functions for the monkey data analysis
-process.vars = function(pheno, covars, num.vars, fac.vars) {
-  
-  # Select only variables we are interested in
-  pheno = pheno[,covars]
-  
-  # Remove field names from data and convert categorical variables to factors, numeric to numeric
-  for (var in union(num.vars, fac.vars)) {
-    old.data = as.character(pheno[,var])
-    new.name = strsplit(old.data[1], split=":")[[1]][1]
-    new.data = as.character(sapply(old.data, function(x) {return(trimws(strsplit(x, split=":")[[1]][2]))}))
-    if (var %in% num.vars)
-      new.data = as.numeric(new.data)
-    else
-      new.data = as.factor(new.data)
-    
-    colnames(pheno)[colnames(pheno) == var] = new.name
-    pheno[,new.name] = new.data
-  }
-  
-  # Replace spaces with periods in variable names to facilitate R subsetting
-  colnames(pheno) = gsub(" ", ".", colnames(pheno), fixed=T)
-  
-  # The clinical status of monkey 18 at time point 0 is incorrectly labeled as latent. Should be active. This is an error in the data submission to GEO.
-  pheno$clinical.status[pheno$monkeyid == "M18" & pheno$time.point==0] = "Active"
-  
-  # Create an extra numeric variable to combine the baseline into one time point
-  pheno$time.point.comb = ifelse(pheno$time.point==1, 0, pheno$time.point)
-  
-  return(pheno)
-}
-
-
-
-process.data = function(expres, PAL) {
-  
-  expres = expres[PAL,]
-  # All signal intensity values less than 10 are set equal to 10
-  expres[expres < 10.0] = 10
-  
-  # Log 2 transform the data
-  expres = log2(expres)
-  
-  
-  return(expres)
-}
 
 make.train.test = function(data, pheno) {
     for (p in 1:dim(data)[1]) {
@@ -211,8 +105,8 @@ make.train.test = function(data, pheno) {
                     print(data[p,d])
                     }
                 pheno$dataset[idx] = as.character(data[p,d])
+                }
         }
-}
     return(pheno)
 }
 
@@ -225,8 +119,7 @@ filter.human.pheno = function(data) {
              "subjectid:ch1",
              "time.from.exposure.months:ch1",
              "time.to.tb.months:ch1")
-    
-    
+     
     new.names = c("age",
                  "code",
                  "gender",
@@ -235,18 +128,17 @@ filter.human.pheno = function(data) {
                  "subjectid",
                  "time.from.exposure.months",
                  "time.to.tb.months")
+    
     factors = c("code","gender",
                  "group",
                  "site",
                  "subjectid")
     
-    # Depending on the analysis, I may want time.from.exposure.months to be a factor, but for now is a numeric
     numbers = c("age",
                  "time.from.exposure.months",
                  "time.to.tb.months")
     
 
-    
     new.data = data[,cols]
     colnames(new.data) = new.names
     for (col in factors)
@@ -254,15 +146,7 @@ filter.human.pheno = function(data) {
     for (col in numbers)
         new.data[,col] = as.numeric(new.data[,col])
     
- 
-    # Filter out subjects with NA on clinical data. There are 6 of them.
-    # Actually, we need to add them back in! It's a typo.
-    
-    # I need to email them again about all the samples that are missing... Just go off expression codes.
-    # Also tell them that they have errors in their uploaded pheno table matrix file.
-    # I should just check the totals too.
-    
-
+    # Six (6) subjects have NA on their clinical data in the GEO series of Suliman et al, but the paper's supplementary tables have their information. I have added them here below.
     
     addit.row.names = c("GSM2475704", "GSM2475705", "GSM2475706", "GSM2475722", "GSM2475742", "GSM2475748")
     add.age = c(32, 34, 28, 40, 24, 18)
@@ -287,7 +171,7 @@ filter.human.pheno = function(data) {
     
 
     # Filter out the duplicated GEO Access Numbers (16 samples, have same code and patient id and clinical info)
-    # I have emailed Gerhard Werlzl and Daniel Zak, the corresponding authors, asking about this
+    # These are simply from sequencing files being split into 2 files for these samples (correspondance with Gerhard Walzl and Daniel Zak)
     
     dup.codes = sort(as.numeric(names(table(new.data$code)[table(new.data$code) == 2])))
     dup.pheno = new.data[new.data$code %in% dup.codes, ]
@@ -301,10 +185,10 @@ filter.human.pheno = function(data) {
     
     new.data = new.data[order(as.numeric(as.character(new.data$code))),]
     
-    # Add training and test split from Suliman et al
+    # Add training and test split from Suliman et al. I collected these data from the Supplemental tables of Suliman et al.
     
-    control_data = read.csv("data/Suliman_et_al_Human_Data//Additional_data_table_trainingtest_controls.csv", header=F)
-    prog_data  = read.csv("data/Suliman_et_al_Human_Data//Additional_data_table_trainingtest_progressors.csv", header=F)
+    control_data = read.csv("data/Suliman_et_al_Additional_Data/Additional_data_table_trainingtest_controls.csv", header=F)
+    prog_data  = read.csv("data/Suliman_et_al_Additional_Data/Additional_data_table_trainingtest_progressors.csv", header=F)
 
     # Match subjectids to how they are in pheno table
     control_data$V1 =gsub("20([0178923]*)/", "\\1/", control_data$V1)
@@ -320,15 +204,14 @@ filter.human.pheno = function(data) {
     print(table(droplevels(new.data$subjectid[is.na(new.data$dataset)])))
     new.data$dataset[is.na(new.data$dataset)] = "Training"
     
-    # the one AHRI should be training
+    # the one AHRI labeled training should be test, according to Suliman et al.
     new.data$dataset[new.data$site == "AHRI"] = "Test"
     
     new.data$dataset = as.factor(new.data$dataset)
     
-    # Go ahead and remove the few UGandan samples:
+    # Go ahead and remove the few Ugandan samples excluded from the Suliman et al study:
     new.data = droplevels(new.data[new.data$site != "UGA",])
     
-    #new.data$tb.status = as.factor(ifelse(is.na(new.data$time.to.tb.months), "control", "prog"))
     
     print("about to return new data frame")
     return(new.data)
@@ -341,34 +224,22 @@ filter.human.exprs = function(exprs, pheno, splice=F) {
     exprs.cols = colnames(exprs)[sample.start:dim(exprs)[2]]
     exprs.cols = gsub("X", "", exprs.cols)
    
-    
-    # Some of the double genes are not labeled correctly. For example, ENSG00000124191 is TOX2, not KLRD1. Also ENSG00000260539 no longer maps to a gene. I am going to go ahead and stick with the ENSEMBL identifier. I'll go back to the genes on the interesting genes, etc.
-    
-    # I will just remove the gene symbol for now.
+    # Remove the gene symbol
     exprs = exprs[,-c(1:(sample.start-1))]
     colnames(exprs) = exprs.cols
     
-    # I also need to remove codes not in the pheno data, those 6 samples that didn't have clinical data.
+    # remove any sample codes not in the pheno data.
     exprs = exprs[,exprs.cols %in% pheno$code]
     
     # Sort columns by code
     exprs = exprs[, order(as.numeric(as.character(colnames(exprs))))]
     
-    
-     print("Are all the codes in the expression data in the same order as the codes in pheno?")
+    print("Are all the codes in the expression data in the same order as the codes in pheno?")
     print(identical(as.character(colnames(exprs)), as.character(pheno$code)))
-    #print(data.frame(exprs=colnames(exprs)[1:50], pheno=pheno$code[1:50]))
-    # Remove gene symbol
+
     return(exprs)
 }
 
-graph_PCA = function(PCA, n_dim, var, pheno) {
-    gg.PCA = as.data.frame(PCA$x[,1:n_dim])
-    gg.PCA$time.period = pheno[,var]
-    gg.PCA$time.period = as.character(gg.PCA$time.period)
-    options(repr.plot.width=8, repr.plot.height=5)
-    print(ggpairs(gg.PCA, aes(colour = time.period)))
-}
 
 detach_package <- function(pkg, character.only = FALSE)
 {
@@ -388,6 +259,7 @@ easy.print = function(data, qte=T) {
     
     cat(sapply(colnames(data), function(x) {paste(sepr, x, sepr ,",\n", sep="")}))
    }
+
 easy.v.print = function(x) {cat(sapply(x, function(x) {paste("\"", x, "\",\n", sep="")}))}
 
 calculate.distribution = function(data) {
@@ -439,7 +311,7 @@ for (f in num.f) {
 }
     
     
-    # Add in a time since exposure variable, which is time since baseline until Anne O'Garra provides me with further information.
+    # Add in a time since exposure variable, which is time since baseline
     time.since.exposure.days = rep(0, dim(contact.pheno)[1])
 
     for (sample in 1:dim(contact.pheno)[1]) {
@@ -487,69 +359,9 @@ library(verification)
 roc.pvalue = function(obs, prob.pred, pos) {
     return(roc.area(ifelse(as.factor(obs)==pos, 1, 0), prob.pred)$p.value)
 }
+    
 
-debug.my.roc = function(pred.prob, obs, pos, title="ROC Curve") {
-    print("WHAT FOLLOWS HEREAFTER IS THE CORRECT ORDER OF FACTORS")
-    levs = levels(as.factor(obs))
-    print("Levels before reversing")
-    print(levs)
-    if (length(levs) != 2) {
-        print("roc requires only two classes!")
-        return(-1)
-    }
-    
-    if (levs[2] != pos)
-        levs = rev(levs)
-    
-    print("Levels after reversing")
-    print(levs)
-    
-    the.roc = roc(predictor=pred.prob,
-              response = as.factor(obs),
-              levels=levs)
-    print("This is the AUC:")
-    print(the.roc$auc)
-    
-    print("This is the AUC p-value:")
-    print(roc.pvalue(obs, pred.prob, pos ))
-    print("This is the AUC 95% Confidence Interval")
-    print(ci(the.roc))
-    plot.roc(the.roc, main=title, legacy.axes=T)
-    
-    print("WHAT FOLLOWS HEREAFTER IS THE OPPOSITE, INCORRECT ORDER OF FACTORS")
-    pos = levs[which(levs != pos)]
-    levs = levels(as.factor(obs))
-    print("Levels before reversing")
-    print(levs)
-    if (length(levs) != 2) {
-        print("roc requires only two classes!")
-        return(-1)
-    }
-    
-    # Here is the changed line for debug
-    if (levs[2] != pos)
-        levs = rev(levs)
-    print("Levels after reversing")
-    print(levs)
-    
-    the.roc.wrong = roc(predictor=pred.prob,
-              response = as.factor(obs),
-              levels=levs)
-    print("This is the AUC:")
-    print(the.roc.wrong$auc)
-    
-    print("This is the AUC p-value:")
-    print(roc.pvalue(obs, pred.prob, pos ))
-    print("This is the AUC 95% Confidence Interval")
-    print(ci(the.roc.wrong))
-    plot.roc(the.roc.wrong, main=title, legacy.axes=T)
-    
-    return(the.roc) # this is the correct roc
-}
-
-    
-    
-# pred.prob is the probability of the pos class
+# pred.prob is the probability of the positive class
 my.roc = function(pred.prob, obs, pos, title="ROC Curve") {
     
     levs = levels(as.factor(obs))
@@ -637,7 +449,6 @@ filter.ACS.pheno = function(data) {
              "group",
              "qft")
     
-    # Depending on the analysis, I may want time.from.exposure.months to be a factor, but for now is a numeric
     numbers = c("age",
                  "tst")
     
@@ -663,7 +474,7 @@ filter.HUMAN.exprs = function(exprs, pheno) {
 }   
 
 generate.regres.graph = function(data, label, log = F, break.90 = F) {
-    #q = qplot(obs, pred, data= data, geom = c("point", "smooth"), method="loess")
+    
     if (log) {
         data$obs = 2 ^ data$obs
         data$pred = 2 ^ data$pred
@@ -685,86 +496,3 @@ generate.regres.graph = function(data, label, log = F, break.90 = F) {
     
     return(q)
 }
-
-get.GEO.eset = function(old_array, c_array, pheno, conv, raw=F) {
-    # Several Steps
-    # (1) Separate signal and p-value, then remove from all arrays not in the pheno (i.e. not C57BL/6, since only B6 is being published)
-    # (2) Order all arrays by their order in the pheno (reorder, then convert to new name)
-    # (3) Reorder the rows according to the order in the old array.
-    # (4) Put together the ID_REF, signal and p-value pieces.
-    
-    
-    # (1) Separate signal and p-value, then remove from all arrays not in the pheno (i.e. not C57BL/6, since only B6 is being published)
-    ID_REF = as.character(c_array$ID_REF)
-    p_val = c_array[,grepl("Detection", colnames(c_array))]
-    if (raw) p_val = 1 - p_val
-    if (!raw) {
-         expres = c_array[,!grepl("Detection", colnames(c_array))]
-           expres = expres[,2:dim(expres)[2]] # remove ID_REF
-        } else {
-        expres = c_array[,grepl("AVG_Signal", colnames(c_array))]
-        colnames(expres) = gsub("AVG_Signal.", "", colnames(expres), fixed=T)
-        
-        }
-   
-    colnames(expres) = convert.barcode(expres, conv)
-    select_samples = colnames(expres) %in% rownames(pheno)
-    p_val = p_val[,select_samples]
-    expres = expres[,select_samples]
-    
-    
-    # (2) Order all arrays by their order in the pheno (reorder, then convert to new name)
-    reorder = match(rownames(pheno), colnames(expres))
-    p_val = p_val[,reorder]
-    expres = expres[,reorder] 
-    print('Are pheno rows the same as expression columns?')
-    print(identical(rownames(pheno), colnames(expres)))
-    
-    colnames(expres) = pheno$Mouse.ID
-    
-    # (3) Reorder the rows according to the order in the old array.
-    old_ID_REF = as.character(old_array$PROBE_ID)
-    row_reorder = match(old_ID_REF, ID_REF)
-    ID_REF = ID_REF[row_reorder]
-    p_val = p_val[row_reorder,]
-    expres = expres[row_reorder,]
-    
-    # (4) Put together the ID_REF, signal and p-value pieces.
-    new_array = data.frame(ID_REF = ID_REF)
-    name_c = 2
-    for (i in 1:dim(expres)[2]) {
-        new_array = cbind(new_array, expres[,i])
-        colnames(new_array)[name_c] = colnames(expres)[i]
-        name_c = name_c + 1
-        new_array = cbind(new_array, p_val[,i])
-        colnames(new_array)[name_c]= "Detection Pval"
-        name_c = name_c + 1
-    }
-    
-    return(new_array)
-    
-}
-
-get.GEO.pheno = function(pheno, conv) {
-    pdat = pheno[,c("Mouse.ID", "Race", "Condition..Tx.Group", "Time.Point", "Tissue.Type", "chip.name")]
-
-    rownames(pdat) = pdat$chip.name
-
-    # trimws(
-    pdat$Time.Point = as.numeric(  unlist(lapply(strsplit(as.character(pdat$Time.Point), split=" "), function(x) {return(x[[2]])})))
-    pdat = pdat[, !(colnames(pdat) == "chip.name")]
-    colnames(pdat) = c("Mouse.ID", "Strain", "Infect.Status", "Time.point.days", "Tissue")
-    pdat$Infect.Status = as.character(pdat$Infect.Status)
-    #print(pdat$Infect.Status)
-    pdat$Infect.Status[pdat$Infect.Status != "Mtb"] = "Naive"
-    #print(pdat$Infect.Status)
-    pdat$Infect.Status = as.factor(pdat$Infect.Status)
-    pdat$Gender = "female"
-
-
-    pdat = pdat[pdat$Strain == "C57BL/6",]
-    pdat$Mouse.ID = paste(pdat$Infect.Status, pdat$Time.point.days, pdat$Mouse.ID, sep="_")
-    return(pdat)
-}
-
-# --------------------------------------------------------------------------------------------------
