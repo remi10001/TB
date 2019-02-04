@@ -6,7 +6,7 @@ This code was developed and used in a linux environment and has not been modifie
 
 ### This software is available under the MIT license. However, the script utils_immunoStates.R contains code that is copied from the MetaIntegrator R package, and thus this script is under an LGPL license.
 
-## Installation (for running the provided jupyter notebook with R; alternatively, one can use the provided R markdown file with a local installation of R studio, or simply view the provided .html)
+## Installation (for running the provided jupyter notebook with R; alternatively, can simply view the provided .html)
 
 1. Install anaconda (a local installation manager and python distribution)[https://docs.anaconda.com/anaconda/install/], and create a new conda environment
 
