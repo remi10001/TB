@@ -316,7 +316,7 @@ for (f in num.f) {
 
     for (sample in 1:dim(contact.pheno)[1]) {
         time.since.exposure.days[sample] = ymd(contact.pheno[sample, "visit_date"]) - 
-                                    ymd(filter(contact.pheno, 
+                                    ymd(dplyr::filter(contact.pheno, 
                                                patient_id == contact.pheno[sample, "patient_id"], 
                                                timepoint_months == "Baseline")$visit_date[1])
     }
