@@ -122,11 +122,6 @@ normalization = function(gset, filter = T, med = FALSE) {
   return(gset)
 }
 
-# When less than 10 to 10 was performed:
-# "3558 genes passed the 2 fold change from median in 10% of samples filter"
-# When less than 10 to 10 not performed
-# "4437 genes passed the 2 fold change from median in 10% of samples filter"
-
 # I want to reproduce what I created
 graph.PCA = function(PCA, strat, pheno) {
   # pheno and PCA may have different samples. I want to remove items from pheno
@@ -274,9 +269,6 @@ filter.human.pheno = function(data) {
     # Filter out subjects with NA on clinical data. There are 6 of them.
     # Actually, we need to add them back in! It's a typo.
     
-    # I need to email them again about all the samples that are missing... Just go off expression codes.
-    # Also tell them that they have errors in their uploaded pheno table matrix file.
-    # I should just check the totals too.
     
 
     
@@ -303,7 +295,6 @@ filter.human.pheno = function(data) {
     
 
     # Filter out the duplicated GEO Access Numbers (16 samples, have same code and patient id and clinical info)
-    # I have emailed Gerhard Werlzl and Daniel Zak, the corresponding authors, asking about this
     
     dup.codes = sort(as.numeric(names(table(new.data$code)[table(new.data$code) == 2])))
     dup.pheno = new.data[new.data$code %in% dup.codes, ]
@@ -357,9 +348,7 @@ filter.human.exprs = function(exprs, pheno, splice=F) {
     exprs.cols = colnames(exprs)[sample.start:dim(exprs)[2]]
     exprs.cols = gsub("X", "", exprs.cols)
    
-    
-    # Some of the double genes are not labeled correctly. For example, ENSG00000124191 is TOX2, not KLRD1. Also ENSG00000260539 no longer maps to a gene. I am going to go ahead and stick with the ENSEMBL identifier. I'll go back to the genes on the interesting genes, etc.
-    
+   
     # I will just remove the gene symbol for now.
     exprs = exprs[,-c(1:(sample.start-1))]
     colnames(exprs) = exprs.cols
