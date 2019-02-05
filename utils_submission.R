@@ -92,7 +92,10 @@ process.monkey.exprs = function(expres, PAL) {
 }
 
 
-library(lubridate)
+if (!require("lubridate")) {
+  install.packages("lubridate")
+  library("lubridate")
+}
 
 
 make.train.test = function(data, pheno) {
@@ -354,7 +357,11 @@ all.metrics = function(truth, pred) {
     print(caret::R2(pred, truth))
 }
 
-library(verification)
+if (!require("verification")) {
+  install.packages("verification")
+  library("verification")
+}
+
 
 roc.pvalue = function(obs, prob.pred, pos) {
     return(roc.area(ifelse(as.factor(obs)==pos, 1, 0), prob.pred)$p.value)
@@ -405,7 +412,10 @@ my.roc.auc = function(pred.prob, obs, pos, title="ROC Curve") {
     return(the.roc$auc)
 }
 
-library(akima)
+if (!require("akima")) {
+  install.packages("akima")
+  library("akima")
+}
 
 graph.hyper = function(x, y, z) {
    interpdf <-interp2xyz(interp(x=x, y=y, z=z, duplicate="mean"), data.frame=TRUE)
