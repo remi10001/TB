@@ -475,7 +475,7 @@ for (f in num.f) {
 
     for (sample in 1:dim(contact.pheno)[1]) {
         time.since.exposure.days[sample] = ymd(contact.pheno[sample, "visit_date"]) - 
-                                    ymd(filter(contact.pheno, 
+                                    ymd(dplyr::filter(contact.pheno, 
                                                patient_id == contact.pheno[sample, "patient_id"], 
                                                timepoint_months == "Baseline")$visit_date[1])
     }
@@ -723,17 +723,32 @@ generate.regres.graph = function(data, label, log = F, break.90 = F) {
         data$pred = 2 ^ data$pred
     }
     
+    label.y = 180
+    label.x = 75
+    
+    if (break.90) {
+    label.x = 42
+    label.y = 90
+    }
+    
+    
     break_points = c(0, 30, 60, 90 , 120, 150, 180)
     if (break.90)
         break_points = c(0, 20, 30, 42, 56, 90)
-    q = ggplot(data, aes(obs, pred, group=obs)) +
+    q = ggplot(data, aes(obs, pred)) + #, group=obs)) +
         
         scale_y_continuous(breaks=break_points, limits = c(min(break_points), max(break_points)+15)) +
         scale_x_continuous(breaks=break_points, limits = c(min(break_points), max(break_points)+15)) +
         #geom_point() + geom_smooth(method="loess") +
         geom_point() +
-        geom_boxplot(outlier.shape=NA, colour = "red", fill="white", width=10) +
-        geom_smooth(aes(obs, pred), method = "lm", se = FALSE) + 
+        #geom_boxplot(outlier.shape=NA, colour = "red", fill="white", width=10) +
+        #geom_smooth(aes(obs, pred), method = "lm", se = FALSE) + 
+        geom_boxplot(aes(obs, pred, group=obs), outlier.shape=NA, colour = "red", fill="white", width=10) +
+        geom_smooth(method = "lm", col= "blue", se = FALSE, size=0.5) + #, linetype="dashed") + 
+        stat_cor(method = "pearson", label.x = label.x, label.y = label.y) + #stat_cor(
+         #  aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+         # label.x = 3
+         #   ) +
         theme_bw() +
         labs(x="Days Post Infection", y="Predicted Days Post Infection") + 
         ggtitle(paste(label)) +  #, "regression in cynomolgus macaques")) +
