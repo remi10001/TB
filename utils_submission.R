@@ -484,26 +484,34 @@ filter.HUMAN.exprs = function(exprs, pheno) {
 }   
 
 generate.regres.graph = function(data, label, log = F, break.90 = F) {
-    
     if (log) {
         data$obs = 2 ^ data$obs
         data$pred = 2 ^ data$pred
     }
     
+    label.y = 180
+    label.x = 75
+    
+    if (break.90) {
+    label.x = 42
+    label.y = 90
+    }
+    
+    
     break_points = c(0, 30, 60, 90 , 120, 150, 180)
     if (break.90)
         break_points = c(0, 20, 30, 42, 56, 90)
-    q = ggplot(data, aes(obs, pred, group=obs)) +
+    q = ggplot(data, aes(obs, pred)) + #, group=obs)) +
         
         scale_y_continuous(breaks=break_points, limits = c(min(break_points), max(break_points)+15)) +
         scale_x_continuous(breaks=break_points, limits = c(min(break_points), max(break_points)+15)) +
-        geom_point() +
+        geom_point() + 
         geom_boxplot(aes(obs, pred, group=obs), outlier.shape=NA, colour = "red", fill="white", width=10) +
         geom_smooth(method = "lm", col= "blue", se = FALSE, size=0.5) + 
         stat_cor(method = "pearson", label.x = label.x, label.y = label.y) + 
         theme_bw() +
         labs(x="Days Post Infection", y="Predicted Days Post Infection") + 
-        ggtitle(paste(label)) +  
+        ggtitle(paste(label)) + 
         theme(plot.title = element_text(hjust = 0.5))
     
     return(q)
