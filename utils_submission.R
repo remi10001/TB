@@ -497,11 +497,13 @@ generate.regres.graph = function(data, label, log = F, break.90 = F) {
         
         scale_y_continuous(breaks=break_points, limits = c(min(break_points), max(break_points)+15)) +
         scale_x_continuous(breaks=break_points, limits = c(min(break_points), max(break_points)+15)) +
-        geom_point() + geom_smooth(method="loess") +
-        geom_boxplot(outlier.shape=NA, colour = "red", fill="white", width=10) +
+        geom_point() +
+        geom_boxplot(aes(obs, pred, group=obs), outlier.shape=NA, colour = "red", fill="white", width=10) +
+        geom_smooth(method = "lm", col= "blue", se = FALSE, size=0.5) + 
+        stat_cor(method = "pearson", label.x = label.x, label.y = label.y) + 
         theme_bw() +
         labs(x="Days Post Infection", y="Predicted Days Post Infection") + 
-        ggtitle(paste(label)) +  #, "regression in cynomolgus macaques")) +
+        ggtitle(paste(label)) +  
         theme(plot.title = element_text(hjust = 0.5))
     
     return(q)
