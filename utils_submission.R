@@ -2,6 +2,8 @@
 
 # Function Definitions for paper analysis reproduction:
 
+library(dplyr)
+
 process.monkey.vars = function(pheno, covars, num.vars, fac.vars) {
   
   # Select only variables we are interested in
@@ -516,3 +518,20 @@ generate.regres.graph = function(data, label, log = F, break.90 = F) {
     
     return(q)
 }
+
+posGenes = c("RP11-552F3.12", "PYURF" ,        "TRIM7"  ,       "TUBGCP4"  )
+negGenes = c("ZNF608", "BEAN1")
+
+# Calculates arithmetic mean of log2 gene values of upregulated genes - downregulated genes
+# exprs is an expression matrix of genes with nsamples as rows and ngenes as columns
+calculateScore = function(exprs, posGenes, negGenes) {
+    pos.exprs = exprs[,colnames(exprs) %in% posGenes]
+    neg.exprs = exprs[,colnames(exprs) %in% negGenes]
+    
+    if (!is.null(dim(neg.exprs))) {
+        scores = apply(pos.exprs, 1, mean) - apply(neg.exprs, 1, mean)
+        } else {
+        scores = apply(pos.exprs, 1, mean) - neg.exprs
+    }
+    return (scores)
+    }
