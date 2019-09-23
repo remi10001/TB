@@ -535,3 +535,29 @@ calculateScore = function(exprs, posGenes, negGenes) {
     }
     return (scores)
     }
+
+get_paren = function(strs) {
+    res = c()
+    for (j in strs) {
+    k <- str_extract_all(j, "\\([^()]+\\)")[[1]]
+# Remove parenthesis
+    k <- substring(k, 2, nchar(k)-1)
+        res = c(res, k)
+        }
+    return(res)
+}
+
+extract_id = function(strs) {
+    res = c()
+    for (s in strs) {
+        if (grepl("PAX",s)) {
+            k = str_match(s, "(\\d{4})PAX")[[2]]
+        } else if (str_count(s, "_") >= 3){
+            k = str_match(s, "\\d{2}_(\\d{4})D")[[2]]
+        } else {
+            k = NA
+        }
+        res = c(res, k)
+    }
+    return(res)
+}
