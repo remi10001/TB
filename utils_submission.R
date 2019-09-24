@@ -561,3 +561,30 @@ extract_id = function(strs) {
     }
     return(res)
 }
+
+
+convert.to.gene.symbols = function(tt.1,tt.2,genes) {
+    #gene_symbols_disco = getBM(attributes = c("hgnc_symbol", "ensembl_gene_id"),
+    #                    filters="ensembl_gene_id",
+    #                    values = genes, mart = human)
+    gs = gene_symbols_disco[gene_symbols_disco$hgnc_symbol!='',]
+    #print("Table of counts for gene symbols")
+    #print(table(table(gs$hgnc_symbol)))
+    #print("Table of counts for ensembl ids")
+    #print(table(table(gs$ensembl_gene_id)))
+    tt.1.fil = tt.1[rownames(tt.1) %in% gs$ensembl_gene_id,]
+
+    tt.2.fil = tt.2[rownames(tt.2) %in% gs$ensembl_gene_id,]
+
+    gs.match = gs[match(rownames(tt.1.fil), gs$ensembl_gene_id),]
+
+    rownames(tt.1.fil) = gs.match$hgnc_symbol
+    rownames(tt.2.fil) = gs.match$hgnc_symbol
+    
+    
+    result = list()
+    result$tt.1 = tt.1.fil
+    result$tt.2 = tt.2.fil
+    return(result)
+    
+}
