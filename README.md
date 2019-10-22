@@ -1,6 +1,6 @@
 # TB
 
-This repository provides code to reproduce the analyses of the unpublished manuscript titled "_Blood RNA Signatures Predict Recent Tuberculosis Exposure in Mice, Macaques and Humans_". The major analyses of the paper can be reproduced by running the jupyter notebook "Time Since Infection_Submission_Streamlinedcode.ipynb". All code written during the development of this project is in "Time Since Infection RNA_Paper_Analysis.ipynb" and may be reviewed. However, it is not structured for easy, streamlined running of all code.
+This repository provides code to reproduce the major analyses of the unpublished manuscript titled "_Blood RNA Signatures Predict Recent Tuberculosis Exposure in Mice, Macaques and Humans_". The major analyses of the paper can be reproduced by running the jupyter notebook "Time Since Infection_Submission_Streamlinedcode.ipynb".
 
 This code was developed and used in a linux environment and has not been modified to aid in running with other platforms.
 
@@ -18,12 +18,11 @@ $  conda activate TB
 2. Install or make sure the following python packages are installed:
 
 - Pandas
-- h5py
 - jupyter
 - jupyter notebook extensions (for easy browsing of the analysis notebook)
 
 ```
-conda install pandas h5py jupyter
+conda install pandas jupyter
 conda install -c conda-forge jupyter_contrib_nbextensions
 ```
 
@@ -47,7 +46,6 @@ R
 1. Run the provided download scripts from the base repository directory to download required public data for the analyses.
 ```
 bash download_macaque_human_data.sh
-bash download_ARCHS4_datatable.sh
 ```
 
 ## Perform the analyses
