@@ -1,6 +1,8 @@
 # This script makes directories and downloads data for the paper.
 # run from the repository base directory using "bash download_macaque_human_data.sh"
 
+mkdir paper_figures/
+
 mkdir data/GSE124688
 
 mkdir data/GSE84152
