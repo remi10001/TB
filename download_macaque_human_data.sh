@@ -37,9 +37,3 @@ wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE116nnn/GSE116014/suppl/GSE116014
 
 tar xf GSE116014_RAW.tar
 gzip -d *idat.gz
-
-cd ../..
-mkdir data/GSE107995
-cd data/GSE107995
-
-wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE107nnn/GSE107995/matrix/GSE107995_series_matrix.txt.gz
