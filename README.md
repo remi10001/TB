@@ -15,22 +15,24 @@ $  conda create --name TB  python=3.6.3
 $  conda activate TB
 ```
 
-2. Install or make sure the following python packages are installed:
+2. Install r-essentials with mro base R version 3.4.3 (the R version used in this analysis)
+
+```
+conda install -c r mro-base=3.4.3 r-essentials 
+```
+
+
+3. Install or make sure the following python packages are installed:
 
 - Pandas
 - jupyter
 - jupyter notebook extensions (for easy browsing of the analysis notebook)
 
 ```
-conda install pandas jupyter
-conda install -c conda-forge jupyter_contrib_nbextensions
+conda install -c conda-forge pandas jupyter jupyter_contrib_nbextensions
 ```
 
-3. Install r-essentials with mro base R version 3.4.3 (the R version used in this analysis)
 
-```
-conda install -c r mro-base=3.4.3 r-essentials 
-```
 
 4. Open R from command-line and run IRkernel so that jupyter notebook can see the R installation
 
